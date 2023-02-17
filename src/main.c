@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
 		int batteryCurrent = 0; // mA.
 		int batteryVoltage = 0; // mV.
 		int batteryPower = 0; // mW.
-		double batteryTemp = 0.0f; // →.
+		double batteryTemp = 0.0f; // 째C.
 
 		if (IsDirExist("/sys/class/power_supply/battery")) {
 			batteryCapacity = atoi(ReadFile(NULL, "/sys/class/power_supply/battery/capacity"));
@@ -125,9 +125,9 @@ int main(int argc, char* argv[])
 			batteryTemp = batteryTemp / 10;
 		}
 
-		// #Battery  99 % 23.45 →
+		// #Battery  99 % 23.45 째C
 		// #Power  1145 mW (201 mA)
-		AppendFile(outputPath, "#Battery  %d %% %.2f ▲C\n", batteryCapacity, batteryTemp);
+		AppendFile(outputPath, "#Battery  %d %% %.2f 째C\n", batteryCapacity, batteryTemp);
 		AppendFile(outputPath, "#Power  %d mW (%d mA)\n", batteryPower, batteryCurrent);
 
 
@@ -135,8 +135,8 @@ int main(int argc, char* argv[])
 		float cpuTemp = (float)atoi(ReadFile(NULL, cpuTempPath));
 		cpuTemp = cpuTemp / 1000;
 
-		// #CPU Temp  43.56 →
-		AppendFile(outputPath, "#CPU Temp  %.2f ▲C\n", cpuTemp);
+		// #CPU Temp  43.56 째C
+		AppendFile(outputPath, "#CPU Temp  %.2f 째C\n", cpuTemp);
 
 
 		// Get CPU Freq.
