@@ -173,14 +173,14 @@ int main(int argc, char* argv[])
 		// Print CPU Stats.
 		
 		// #Cluster0     1145 MHz
-		// [CPU0]          2.34 %
-		// [CPU1]          5.12 %
-		// [CPU2]          1.12 %
-		// [CPU3]          2.56 %
+		// [CPU0]        2.34 %
+		// [CPU1]        5.12 %
+		// [CPU2]        1.12 %
+		// [CPU3]        2.56 %
 		for (i = 0; i < clusterNum; i++) {
 			AppendFile(outputPath, "#Cluster%d     %d MHz\n", i, cpuCurFreq[i] / 1000);
 			for (j = clusterFirstCpu[i]; j < (clusterFirstCpu[i] + clusterCpuCoreNum[i]); j++) {
-				AppendFile(outputPath, "[CPU%d]          %.2f %%\n", j, cpuLoad[j]);
+				AppendFile(outputPath, "[CPU%d]        %.2f %%\n", j, cpuLoad[j]);
 			}
 		}
 

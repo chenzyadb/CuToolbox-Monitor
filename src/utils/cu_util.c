@@ -157,7 +157,7 @@ char* CutString(const char* string, const int cut_space)
 			start_p = i;
 		}
 	}
-	
+
 	return ret;
 }
 
@@ -389,7 +389,7 @@ char* GetTaskName(const int pid)
 
 	char cmdlinePath[128];
 	sprintf(cmdlinePath, "/proc/%d/cmdline", pid);
-	
+
 	int fd = open(cmdlinePath, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
 	if (fd > 0) {
 		int len = read(fd, taskName, sizeof(taskName));
@@ -480,11 +480,13 @@ int RoundNum(const float num)
 	return ret;
 }
 
-void SetThreadName(const char* name) {
+void SetThreadName(const char* name)
+{
 	prctl(PR_SET_NAME, name);
 }
 
-int GetAndroidSDKVersion(void) {
+int GetAndroidSDKVersion(void)
+{
 	int AndroidSDKVersion = 0;
 
 	FILE* fp = popen("/system/bin/getprop \"ro.build.version.sdk\"", "r");
