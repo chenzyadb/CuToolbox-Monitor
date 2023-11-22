@@ -106,27 +106,27 @@ std::string StrDivide(const std::string &str, const int &idx)
 
 std::string StrMerge(const char* format, ...)
 {
-	va_list arg;
-	va_start(arg, format);
-	auto len = vsnprintf(nullptr, 0, format, arg);
-	va_end(arg);
-	if (len > 0) {
+    va_list arg;
+    va_start(arg, format);
+    auto len = vsnprintf(nullptr, 0, format, arg);
+    va_end(arg);
+    if (len > 0) {
         auto size = static_cast<size_t>(len) + 1;
         char* buffer = new char[size];
         memset(buffer, '\0', size);
-		va_start(arg, format);
-		vsnprintf(buffer, size, format, arg);
-		va_end(arg);
-		std::string mergedStr(buffer);
+        va_start(arg, format);
+        vsnprintf(buffer, size, format, arg);
+        va_end(arg);
+        std::string mergedStr(buffer);
         delete[] buffer;
         return mergedStr;
-	}
+    }
     return {};
 }
 
 std::string GetPrevString(const std::string &str, const std::string &key)
 {
-	return str.substr(0, str.find(key));
+    return str.substr(0, str.find(key));
 }
 
 std::string GetRePrevString(const std::string &str, const std::string &key)
@@ -136,12 +136,12 @@ std::string GetRePrevString(const std::string &str, const std::string &key)
 
 std::string GetPostString(const std::string &str, const std::string &key)
 {
-	return str.substr(str.find(key) + key.size());
+    return str.substr(str.find(key) + key.size());
 }
 
 std::string GetRePostString(const std::string &str, const std::string &key)
 {
-	return str.substr(str.rfind(key) + key.size());
+    return str.substr(str.rfind(key) + key.size());
 }
 
 bool StrContains(const std::string &str, const std::string &subStr) 
@@ -269,15 +269,15 @@ std::string GetTaskComm(const int &pid)
 uint64_t GetThreadRuntime(const int &pid, const int &tid) 
 {
     char statPath[64] = { 0 };
-	snprintf(statPath, sizeof(statPath), "/proc/%d/task/%d/stat", pid, tid);
-	int fd = open(statPath, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
-	if (fd >= 0) {
+    snprintf(statPath, sizeof(statPath), "/proc/%d/task/%d/stat", pid, tid);
+    int fd = open(statPath, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
+    if (fd >= 0) {
         char buffer[4096] = { 0 };
-		read(fd, buffer, sizeof(buffer));
+        read(fd, buffer, sizeof(buffer));
         close(fd);
         uint64_t utime = 0, stime = 0;
-		sscanf((strchr(buffer, ')') + 2), "%*c %*d %*d %*d %*d %*d %*u %*lu %*lu %*lu %*lu %*lu %" SCNu64 " %" SCNu64, &utime, &stime);
-		return (utime + stime);
+        sscanf((strchr(buffer, ')') + 2), "%*c %*d %*d %*d %*d %*d %*u %*lu %*lu %*lu %*lu %*lu %" SCNu64 " %" SCNu64, &utime, &stime);
+        return (utime + stime);
     }
     return 0;
 }
@@ -441,13 +441,13 @@ std::string TrimStr(const std::string &str)
     for (const auto &c : str) {
         switch (c) {
             case ' ':
-			case '\n':
-			case '\t':
-			case '\r':
-			case '\f':
-			case '\a':
-			case '\b':
-			case '\v':
+            case '\n':
+            case '\t':
+            case '\r':
+            case '\f':
+            case '\a':
+            case '\b':
+            case '\v':
                 break;
             default:
                 trimedStr += c;
@@ -516,16 +516,16 @@ std::vector<int> GetTaskThreads(const int &pid)
     char taskPath[128] = { 0 };
     snprintf(taskPath, sizeof(taskPath), "/proc/%d/task", pid);
     auto dir = opendir(taskPath);
-	if (dir) {
+    if (dir) {
         for (auto entry = readdir(dir); entry != nullptr; entry = readdir(dir)) {
             if (entry->d_type == DT_DIR) {
-				int tid = atoi(entry->d_name);
+                int tid = atoi(entry->d_name);
                 if (tid > 0 && tid < (INT16_MAX + 1)) {
                     threads.emplace_back(tid);
                 }
-			}
+            }
         }
-		closedir(dir);
-	}
+        closedir(dir);
+    }
     return threads;
 }
