@@ -1,7 +1,7 @@
 // CuToolbox Monitor V3 by chenzyadb.
 
 #include "utils/libcu.h"
-#include "utils/CuSimpleMatch.h"
+#include "utils/CuSimpleMatch.hpp"
 
 constexpr char DAEMON_NAME[] = "ct_monitor";
 
@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
 
 	std::string cpuThermalPath = "/sys/class/thermal/thermal_zone0/temp";
 	{
-		const CuSimpleMatch cpuThermalMatcher("^(cpuss|tsens_tz_sensor|mtktscpu|apcpu|cluster|cpu);");
+		CuSimpleMatch cpuThermalMatcher("(cpuss|tsens_tz_sensor|mtktscpu|apcpu|cluster|cpu)*");
 		auto dir = opendir("/sys/class/thermal");
 		if (dir) {
 			for (auto entry = readdir(dir); entry != nullptr; entry = readdir(dir)) {
@@ -114,7 +114,7 @@ int main(int argc, char* argv[])
 		{
 			auto batteryEvent = ReadFile(batteryPath + "/uevent");
 			int batteryCapacity = StringToInteger(GetPrevString(GetPostString(batteryEvent, "CAPACITY="), "\n"));
-			int batteryCurrent = AbsInt(StringToInteger(GetPrevString(GetPostString(batteryEvent, "CURRENT_NOW="), "\n")));
+			int batteryCurrent = AbsVal(StringToInteger(GetPrevString(GetPostString(batteryEvent, "CURRENT_NOW="), "\n")));
 			int batteryVoltage = StringToInteger(GetPrevString(GetPostString(batteryEvent, "VOLTAGE_NOW="), "\n"));
 			int batteryTemp = StringToInteger(GetPrevString(GetPostString(batteryEvent, "TEMP="), "\n")) / 10;
 			if (batteryCurrent > 10000) {
@@ -144,10 +144,10 @@ int main(int argc, char* argv[])
 		}
 		{
 			static const auto getCpuLoads = [&]() -> std::vector<float> {
-				static CuSimpleMatch cpuMatcher("^(cpu[0-9]);");
+				static CuSimpleMatch cpuMatcher("cpu[0-9]*");
 				static std::vector<uint64_t> prevSumTime(coreNum), prevBusyTime(coreNum);
 				std::vector<float> cpuLoads(coreNum);
-				auto lines = StrSplit(ReadFile("/proc/stat"), "\n");
+				auto lines = StrSplitLine(ReadFile("/proc/stat"));
 				for (const auto &line : lines) {
 					if (cpuMatcher.match(line)) {
 						int core = 0;
@@ -200,13 +200,13 @@ int main(int argc, char* argv[])
 
 			uint64_t gpuFreq = 0;
 			if (IsPathExist("/sys/kernel/gpu/gpu_clock")) { // Linux Default
-				gpuFreq = StringToLong(ReadFile("/sys/kernel/gpu/gpu_clock"));
+				gpuFreq = StringToInteger(ReadFile("/sys/kernel/gpu/gpu_clock"));
 			} else if (IsPathExist("/sys/class/kgsl/kgsl-3d0/clock_mhz")) { // Qualcomm (MHz)
 				gpuFreq = StringToInteger(ReadFile("/sys/class/kgsl/kgsl-3d0/clock_mhz"));
 			} else if (IsPathExist("/sys/class/kgsl/kgsl-3d0/devfreq/cur_freq")) { // Qualcomm
-				gpuFreq = StringToLong(ReadFile("/sys/class/kgsl/kgsl-3d0/devfreq/cur_freq"));
+				gpuFreq = StringToInteger(ReadFile("/sys/class/kgsl/kgsl-3d0/devfreq/cur_freq"));
 			} else if (IsPathExist("/sys/class/devfreq/gpufreq/cur_freq")) { // Kirin & Unisoc
-				gpuFreq = StringToLong(ReadFile("/sys/class/devfreq/gpufreq/cur_freq"));
+				gpuFreq = StringToInteger(ReadFile("/sys/class/devfreq/gpufreq/cur_freq"));
 			} else if (IsPathExist("/proc/gpufreq/gpufreq_var_dump")) { // MediaTek Real GpuFreq
 				auto gpuFreqStr = GetPrevString(GetPostString(ReadFile("/proc/gpufreq/gpufreq_var_dump"), "(real) freq: "), ",");
 				gpuFreq = StringToInteger(gpuFreqStr);
@@ -217,7 +217,7 @@ int main(int argc, char* argv[])
 			} else {
 				auto maliGpuPath = getMaliGpuFreqPath();
 				if (IsPathExist(maliGpuPath)) {
-					gpuFreq = StringToLong(ReadFile(maliGpuPath));
+					gpuFreq = StringToInteger(ReadFile(maliGpuPath));
 				}
 			}
 			if (gpuFreq > 10000000) {
@@ -249,8 +249,7 @@ int main(int argc, char* argv[])
 		{
 			int ddrFreq = 0;
 			if (IsPathExist("/sys/class/devfreq/ddrfreq/cur_freq")) { // Kirin
-				auto ddrFreqHz = StringToLong(ReadFile("/sys/class/devfreq/ddrfreq/cur_freq")) / 1000;
-				ddrFreq = static_cast<int>(ddrFreqHz);
+				ddrFreq = StringToInteger(ReadFile("/sys/class/devfreq/ddrfreq/cur_freq")) / 1000;
 			} else if (IsPathExist("/sys/devices/platform/10012000.dvfsrc/helio-dvfsrc/dvfsrc_dump")) { // MediaTek
 				auto lines = StrSplit(ReadFile("/sys/devices/platform/10012000.dvfsrc/helio-dvfsrc/dvfsrc_dump"), "\n");
 				for (const auto &line : lines) {

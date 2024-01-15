@@ -12,9 +12,9 @@ mkdir -p ${BUILD_DIR}
 
 echo "- Build Monitor."
 ${TOOLCHAIN_BIN}/${TARGET_PREFIX}-clang++ \
-"${BASE_DIR}/src/main.cpp" "${BASE_DIR}/src/utils/libcu.cpp" "${BASE_DIR}/src/utils/CuSimpleMatch.cpp" \
--static-libstdc++ -O3 -w \
--o "${BUILD_DIR}/ct_monitor"
+ "${BASE_DIR}/src/main.cpp" \
+ -std=c++17 -fvisibility=hidden -O3 -march=armv8-a -static-libstdc++ -w \
+ -o "${BUILD_DIR}/ct_monitor"
 
 echo "- Done."
 exit 0;
