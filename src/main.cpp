@@ -1,7 +1,7 @@
 // CuToolbox Monitor V3 by chenzyadb.
 
 #include "utils/libcu.h"
-#include "utils/CuSimpleMatch.hpp"
+#include "utils/CuStringMatcher.h"
 
 constexpr char DAEMON_NAME[] = "ct_monitor";
 
@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
 
 	std::string cpuThermalPath = "/sys/class/thermal/thermal_zone0/temp";
 	{
-		CuSimpleMatch cpuThermalMatcher("(cpuss|tsens_tz_sensor|mtktscpu|apcpu|cluster|cpu)*");
+		CU::StringMatcher cpuThermalMatcher("(cpuss|tsens_tz_sensor|mtktscpu|apcpu|cluster|cpu)*");
 		auto dir = opendir("/sys/class/thermal");
 		if (dir) {
 			for (auto entry = readdir(dir); entry != nullptr; entry = readdir(dir)) {
@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
 		}
 		{
 			static const auto getCpuLoads = [&]() -> std::vector<float> {
-				static CuSimpleMatch cpuMatcher("cpu[0-9]*");
+				static CU::StringMatcher cpuMatcher("cpu[0-9]*");
 				static std::vector<uint64_t> prevSumTime(coreNum), prevBusyTime(coreNum);
 				std::vector<float> cpuLoads(coreNum);
 				auto lines = StrSplitLine(ReadFile("/proc/stat"));
@@ -207,8 +207,11 @@ int main(int argc, char* argv[])
 				gpuFreq = StringToInteger(ReadFile("/sys/class/kgsl/kgsl-3d0/devfreq/cur_freq"));
 			} else if (IsPathExist("/sys/class/devfreq/gpufreq/cur_freq")) { // Kirin & Unisoc
 				gpuFreq = StringToInteger(ReadFile("/sys/class/devfreq/gpufreq/cur_freq"));
-			} else if (IsPathExist("/proc/gpufreq/gpufreq_var_dump")) { // MediaTek Real GpuFreq
+			} else if (IsPathExist("/proc/gpufreq/gpufreq_var_dump")) { // Old MediaTek Real GpuFreq
 				auto gpuFreqStr = GetPrevString(GetPostString(ReadFile("/proc/gpufreq/gpufreq_var_dump"), "(real) freq: "), ",");
+				gpuFreq = StringToInteger(gpuFreqStr);
+			} else if (IsPathExist("/proc/gpufreqv2/gpufreq_status")) { // New MediaTek Real GpuFreq
+				auto gpuFreqStr = GetPrevString(GetPostString(ReadFile("/proc/gpufreqv2/gpufreq_status"), "Con1Freq: "), ",");
 				gpuFreq = StringToInteger(gpuFreqStr);
 			} else if (IsPathExist("/sys/kernel/debug/ged/hal/current_freqency")) { // Old MediaTek
 				sscanf(ReadFile("/sys/kernel/debug/ged/hal/current_freqency").c_str(), "%*d %ld", &gpuFreq);
@@ -250,8 +253,17 @@ int main(int argc, char* argv[])
 			int ddrFreq = 0;
 			if (IsPathExist("/sys/class/devfreq/ddrfreq/cur_freq")) { // Kirin
 				ddrFreq = StringToInteger(ReadFile("/sys/class/devfreq/ddrfreq/cur_freq")) / 1000;
-			} else if (IsPathExist("/sys/devices/platform/10012000.dvfsrc/helio-dvfsrc/dvfsrc_dump")) { // MediaTek
-				auto lines = StrSplit(ReadFile("/sys/devices/platform/10012000.dvfsrc/helio-dvfsrc/dvfsrc_dump"), "\n");
+			} else if (IsPathExist("/sys/devices/platform/10012000.dvfsrc/helio-dvfsrc/dvfsrc_dump")) { // Old MediaTek
+				auto lines = StrSplitLine(ReadFile("/sys/devices/platform/10012000.dvfsrc/helio-dvfsrc/dvfsrc_dump"));
+				for (const auto &line : lines) {
+					if (StrContains(line, "khz")) {
+						// DDR    : 1866000  khz
+						ddrFreq = StringToInteger(TrimStr(GetPrevString(GetPostString(line, ":"), "khz")));
+						break;
+					}
+				}
+			} else if (IsPathExist("/sys/kernel/helio-dvfsrc/dvfsrc_dump")) { // New MediaTek
+				auto lines = StrSplitLine(ReadFile("/sys/kernel/helio-dvfsrc/dvfsrc_dump"));
 				for (const auto &line : lines) {
 					if (StrContains(line, "khz")) {
 						// DDR    : 1866000  khz
@@ -268,7 +280,7 @@ int main(int argc, char* argv[])
 		}
 		{
 			int memTotal = 0, memAvailable = 0;
-			auto lines = StrSplit(ReadFile("/proc/meminfo"), "\n");
+			auto lines = StrSplitLine(ReadFile("/proc/meminfo"));
 			for (const auto &line : lines) {
 				// MemTotal:        3809036 kB
 				// MemAvailable:     865620 kB
