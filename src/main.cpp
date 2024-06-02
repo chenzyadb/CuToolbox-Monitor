@@ -87,7 +87,7 @@ int main(int argc, char* argv[])
 
 	std::string cpuThermalPath = "/sys/class/thermal/thermal_zone0/temp";
 	{
-		CU::StringMatcher cpuThermalMatcher("(cpuss|tsens_tz_sensor|mtktscpu|apcpu|cluster|cpu)*");
+		CU::StringMatcher cpuThermalMatcher("tsens_tz_sensor*|*(cluster|cpu)*");
 		auto dir = opendir("/sys/class/thermal");
 		if (dir) {
 			for (auto entry = readdir(dir); entry != nullptr; entry = readdir(dir)) {
@@ -207,12 +207,9 @@ int main(int argc, char* argv[])
 				gpuFreq = StringToInteger(ReadFile("/sys/class/kgsl/kgsl-3d0/devfreq/cur_freq"));
 			} else if (IsPathExist("/sys/class/devfreq/gpufreq/cur_freq")) { // Kirin & Unisoc
 				gpuFreq = StringToInteger(ReadFile("/sys/class/devfreq/gpufreq/cur_freq"));
-			} else if (IsPathExist("/proc/gpufreq/gpufreq_var_dump")) { // Old MediaTek Real GpuFreq
-				auto gpuFreqStr = GetPrevString(GetPostString(ReadFile("/proc/gpufreq/gpufreq_var_dump"), "(real) freq: "), ",");
-				gpuFreq = StringToInteger(gpuFreqStr);
-			} else if (IsPathExist("/proc/gpufreqv2/gpufreq_status")) { // New MediaTek Real GpuFreq
-				auto gpuFreqStr = GetPrevString(GetPostString(ReadFile("/proc/gpufreqv2/gpufreq_status"), "Con1Freq: "), ",");
-				gpuFreq = StringToInteger(gpuFreqStr);
+			} else if (IsPathExist("/proc/gpufreq/gpufreq_var_dump")) { // MediaTek Real GpuFreq
+				auto varDump = ReadFile("/proc/gpufreq/gpufreq_var_dump");
+				gpuFreq = StringToInteger(GetPrevString(GetPostString(varDump, "(real) freq: "), ","));
 			} else if (IsPathExist("/sys/kernel/debug/ged/hal/current_freqency")) { // Old MediaTek
 				sscanf(ReadFile("/sys/kernel/debug/ged/hal/current_freqency").c_str(), "%*d %ld", &gpuFreq);
 			} else if (IsPathExist("/sys/kernel/ged/hal/current_freqency")) { // New MediaTek
