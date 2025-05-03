@@ -1,20 +1,20 @@
-#!/usr/bin/sh
+ANDROID_NDK="d:/Apps/android-ndk"
+SOURCE_DIR="c:/Users/chenz/Documents/GitHub/CuToolbox-Monitor"
+BUILD_DIR="${SOURCE_DIR}/build"
 
-NDK_PATH="/home/android-ndk"
-BASE_DIR=$(dirname $0)
-BUILD_DIR="${BASE_DIR}/build"
-SOURCE_DIR="${BASE_DIR}/source"
-TOOLCHAIN_BIN="${NDK_PATH}/toolchains/llvm/prebuilt/linux-x86_64/bin"
-TARGET_PREFIX="aarch64-linux-android28"
+mkdir -p "$BUILD_DIR"
 
-rm -rf ${BUILD_DIR}
-mkdir -p ${BUILD_DIR}
+cmake \
+    -DCMAKE_BUILD_TYPE="release" \
+    -DCMAKE_SYSTEM_NAME="Android" \
+    -DCMAKE_TOOLCHAIN_FILE="${ANDROID_NDK}/build/cmake/android.toolchain.cmake" \
+    -DANDROID_NATIVE_API_LEVEL=28 \
+    -DANDROID_ABI="arm64-v8a" \
+    -DANDROID_STL="c++_static" \
+    -H${SOURCE_DIR} \
+    -B${BUILD_DIR} \
+    -G "Ninja"
+cmake --build "$BUILD_DIR" --config "release" --target "ct_monitor" -j16
 
-echo "- Build Monitor."
-${TOOLCHAIN_BIN}/${TARGET_PREFIX}-clang++ \
- "${BASE_DIR}/src/main.cpp" \
- -std=c++17 -fvisibility=hidden -O3 -march=armv8-a -static-libstdc++ -w \
- -o "${BUILD_DIR}/ct_monitor"
-
-echo "- Done."
-exit 0;
+cp -f "${BUILD_DIR}/ct_monitor" "${SOURCE_DIR}/"
+rm -rf "$BUILD_DIR"
